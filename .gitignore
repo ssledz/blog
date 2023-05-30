@@ -1,0 +1,7 @@
+TAGS
+tags
+.deps/
+_cache/
+_site/
+dist-newstyle
+*.~undo-tree~
