@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>trampoline - blog.ssledz.pl</title>
+        <link rel="stylesheet" href="../css/tufte.css" />
+        <meta name="description" content="Trampoline technical trick">
+    </head>
+    <body>
+        <header>
+          <nav>
+            <a href="../">Home</a>
+            <a rel="author" target="_blank" href="https://ssledz.pl/">Contact</a>
+            <a href="../archive.html">Archive</a>
+          </nav>
+        </header>
+
+        <main role="main">
+          <section>
+            <h1>trampoline</h1>
+            <article>
+    <section class="header">
+        Posted on September 11, 2020
+        
+            by ssledz
+        
+    </section>
+    <section>
+        <h3 id="recursive-tail-call-optimization">Recursive tail call optimization</h3>
+<figure>
+<img src="../images/recursion-vs-trampolining.png" alt="recursion-vs-trampolining" />
+<figcaption aria-hidden="true">recursion-vs-trampolining</figcaption>
+</figure>
+<p>Tail call optimization (or tail call elimination) allows recursive functions to re-use the stack frame instead of
+creating new frames on every call.</p>
+<p>Thanks to that an author of recursive function in tail position is not constrained by the stack size. More over such
+a function runs faster than the function without optimization, because calling a function doesn’t
+create a new stack frame which is time and resource consuming operation.</p>
+<p>Let’s consider a function without a recursive call in tail position</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">fact</span><span class="op">(</span>n<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> <span class="ex">Long</span> <span class="op">=</span> </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>n <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">)</span> <span class="dv">1</span> <span class="cf">else</span> n <span class="op">*</span> <span class="fu">fact</span><span class="op">(</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></span></code></pre></div>
+<p>In order to compute <strong>fact(n)</strong> we need first to compute <strong>fact(n - 1)</strong> and multiple a result by <strong>n</strong>. This process ends
+on a base case when we know that the <strong>fact(1)</strong> is just <strong>1</strong>. This schema can be described formally
+using following recursive formula.</p>
+<pre><code>fact(1) = 1
+fact(n) = n * fact(n - 1)</code></pre>
+<p>You can spot that the formula, and the implementation are almost identical, and this is a great advantage of using
+recursive functions. It makes code more readable and less error prone.</p>
+<p>Let’s try to apply a <strong>fact</strong> with <strong>5</strong></p>
+<pre><code>fact(5) = 5 * fact(4)
+fact(4) = 4 * fact(3)
+fact(3) = 3 * fact(2)
+fact(2) = 2 * fact(1)
+fact(1) = 1
+
+fact(5) = (5 * (4 * (3 * (2 * (1)))))</code></pre>
+<p>Each call creates a new function frame on a stack (the call is mark by <strong>(..)</strong>) and because this call is not in a tail
+position a compiler can’t optimize this.</p>
+<p>It turns out that <strong>fact</strong> can be slightly rewritten to have a recursive call in tail position. Take a look on <strong>fact2</strong>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">fact2</span><span class="op">(</span>n<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> <span class="ex">Long</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> <span class="fu">go</span><span class="op">(</span>m<span class="op">:</span> <span class="ex">Long</span><span class="op">,</span> acc<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> <span class="ex">Long</span> <span class="op">=</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>m <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">)</span> acc <span class="cf">else</span> <span class="fu">go</span><span class="op">(</span>m <span class="op">-</span> <span class="dv">1</span><span class="op">,</span> m <span class="op">*</span> acc<span class="op">)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">go</span><span class="op">(</span>n<span class="op">,</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Here I introduced a helper function <strong>go</strong> which takes a role of stack safe iteration. Why this recursive call is stack safe?
+It is stack safe because the last recursive function call is the last instruction to do, and a compiler is aware of that.
+The compiler can utilize the current stack frame just by substituting the function parameters with the ones computed during the call.
+To have a better understanding we can simply assume that the compiler for optimization purpose rewrites <strong>fact2</strong> to <strong>fact3</strong>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">fact3</span><span class="op">(</span>n<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> <span class="ex">Long</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> m <span class="op">=</span> n</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> acc <span class="op">=</span> 1L</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> <span class="op">(!(</span>m <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    acc <span class="op">=</span> acc <span class="op">*</span> m</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> m <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  acc</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><strong>fact3</strong> uses imperative while loop to compute factorial which doesn’t introduce any new stack frames.</p>
+<h3 id="limitation">Limitation</h3>
+<p>Let’s consider a simple algorithm of checking if a given number is <em>even</em> or <em>odd</em>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">object</span> NotStackSafe <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> <span class="fu">even</span><span class="op">(</span>n<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> <span class="ex">Boolean</span> <span class="op">=</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="kw">true</span> <span class="cf">else</span> <span class="fu">odd</span><span class="op">(</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> <span class="kw">def</span> <span class="fu">odd</span><span class="op">(</span>n<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> <span class="ex">Boolean</span> <span class="op">=</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="kw">false</span> <span class="cf">else</span> <span class="fu">even</span><span class="op">(</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Even if the function calls are in tail positions, for <strong>n</strong> large enough we can notice <strong>stack overflow</strong>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>NotStackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">==</span> <span class="kw">true</span><span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>NotStackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">==</span> <span class="kw">false</span><span class="op">)</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>NotStackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">13</span><span class="op">)</span> <span class="op">==</span> <span class="kw">false</span><span class="op">)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">// assert(NotStackSafe.even(100000) == true) // bum !</span></span></code></pre></div>
+<p>The sad true is that tail call optimization in the Scala compiler is limited to self-recursive methods.</p>
+<p>Is there any way to deal with such constrained? It turns out that there is a solution in a form of simple technical trick.</p>
+<h3 id="trampoline">Trampoline</h3>
+<p>A trampoline is a some kind of function interpreter. It can do two things:
+* resume a suspended function call
+* return a value computed by function to the caller side</p>
+<p>A function running by a trampoline needs to be properly adjusted:
+* if a function wants to make a call (might be recursive), it has to return the suspension instruction
+* if a function wants to return a final result, it has to return an instruction describing the result</p>
+<p>The interpretation process looks following:
+* trampoline calls a function
+* function returns the instruction
+* trampoline interprets the instruction, and in case of suspension repeats the process
+* in case of final result trampoline returns the value to its caller</p>
+<p>All function calls are done via the trampoline. When a function has to call another function, instead of calling it directly,
+it provides the address of the function to be called and the arguments to the trampoline. This ensures that the stack
+does not grow and iteration can continue indefinitely.</p>
+<p>We can model instructions using simple <em>ADT</em></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">sealed</span> <span class="kw">trait</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="kw">class</span> Return<span class="op">[</span>A<span class="op">](</span>a<span class="op">:</span> A<span class="op">)</span> <span class="kw">extends</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="kw">class</span> Suspend<span class="op">[</span>A<span class="op">](</span>resume<span class="op">:</span> <span class="op">()</span> <span class="op">=&gt;</span> Trampoline<span class="op">[</span>A<span class="op">])</span> <span class="kw">extends</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span></code></pre></div>
+<p><strong>Trampoline</strong> data type has two data constructors
+* <strong>Return</strong> – indicates that the function wants to return a value to the caller side
+* <strong>Suspend</strong> – suspends a function call (trampoline can resume)</p>
+<p>Functions <strong>even</strong> and <strong>odd</strong> now can be rewritten respectively</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">object</span> StackSafe <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> <span class="fu">even</span><span class="op">(</span>n<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> Trampoline<span class="op">[</span><span class="ex">Boolean</span><span class="op">]</span> <span class="op">=</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="fu">Return</span><span class="op">(</span><span class="kw">true</span><span class="op">)</span> <span class="cf">else</span> <span class="fu">Suspend</span><span class="op">(()</span> <span class="op">=&gt;</span> <span class="fu">odd</span><span class="op">(</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">))</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> <span class="kw">def</span> <span class="fu">odd</span><span class="op">(</span>n<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> Trampoline<span class="op">[</span><span class="ex">Boolean</span><span class="op">]</span> <span class="op">=</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="fu">Return</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span> <span class="cf">else</span> <span class="fu">Suspend</span><span class="op">(()</span> <span class="op">=&gt;</span> <span class="fu">even</span><span class="op">(</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">))</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The last piece of puzzle is an interpreter which is quite simple</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">sealed</span> <span class="kw">trait</span> Trampoline<span class="op">[</span>A<span class="op">]</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> runT<span class="op">:</span> A <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">go</span><span class="op">(</span>curr<span class="op">:</span> Trampoline<span class="op">[</span>A<span class="op">]):</span> A <span class="op">=</span> curr <span class="cf">match</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="cf">case</span> <span class="fu">Return</span><span class="op">(</span>a<span class="op">)</span> <span class="op">=&gt;</span> a</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">case</span> <span class="fu">Suspend</span><span class="op">(</span>resume<span class="op">)</span> <span class="op">=&gt;</span> <span class="fu">go</span><span class="op">(</span><span class="fu">resume</span><span class="op">())</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">go</span><span class="op">(</span><span class="kw">this</span><span class="op">)</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Now we can try to run again the function <strong>even</strong> with large numbers, not being afraid of <strong>stack overflow</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>StackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">0</span><span class="op">).</span>runT <span class="op">==</span> <span class="kw">true</span><span class="op">)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>StackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">1</span><span class="op">).</span>runT <span class="op">==</span> <span class="kw">false</span><span class="op">)</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>StackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">13</span><span class="op">).</span>runT <span class="op">==</span> <span class="kw">false</span><span class="op">)</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">assert</span><span class="op">(</span>StackSafe<span class="op">.</span><span class="fu">even</span><span class="op">(</span><span class="dv">100000</span><span class="op">).</span>runT <span class="op">==</span> <span class="kw">true</span><span class="op">)</span></span></code></pre></div>
+    </section>
+</article>
+
+          </section>
+        </main>
+
+        <footer>
+          <a href="#top">top</a>
+        </footer>
+    </body>
+</html>

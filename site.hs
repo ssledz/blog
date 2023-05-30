@@ -10,7 +10,7 @@ import           Debug.Trace
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = hakyll $ do
+main = hakyllWith config $ do
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -70,6 +70,11 @@ main = hakyll $ do
 
 
 --------------------------------------------------------------------------------
+config :: Configuration
+config = defaultConfiguration
+  { destinationDirectory = "docs"
+  }
+
 customPandocCompiler :: Compiler (Item String)
 customPandocCompiler =
   pandocCompilerWithTransform
