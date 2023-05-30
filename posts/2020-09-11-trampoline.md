@@ -106,15 +106,18 @@ Is there any way to deal with such constrained? It turns out that there is a sol
 
 ### Trampoline
 
-A trampoline is a some kind of function interpreter. It can do two things: 
+A trampoline is a some kind of function interpreter. It can do two things:
+
 * resume a suspended function call 
 * return a value computed by function to the caller side
 
 A function running by a trampoline needs to be properly adjusted:
+
 * if a function wants to make a call (might be recursive), it has to return the suspension instruction
 * if a function wants to return a final result, it has to return an instruction describing the result
 
 The interpretation process looks following:
+
 * trampoline calls a function
 * function returns the instruction
 * trampoline interprets the instruction, and in case of suspension repeats the process
@@ -133,6 +136,7 @@ case class Suspend[A](resume: () => Trampoline[A]) extends Trampoline[A]
 ```
 
 __Trampoline__ data type has two data constructors
+
 * __Return__ -- indicates that the function wants to return a value to the caller side
 * __Suspend__ -- suspends a function call (trampoline can resume)
 

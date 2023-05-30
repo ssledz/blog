@@ -94,17 +94,23 @@ To have a better understanding we can simply assume that the compiler for optimi
 <p>The sad true is that tail call optimization in the Scala compiler is limited to self-recursive methods.</p>
 <p>Is there any way to deal with such constrained? It turns out that there is a solution in a form of simple technical trick.</p>
 <h3 id="trampoline">Trampoline</h3>
-<p>A trampoline is a some kind of function interpreter. It can do two things:
-* resume a suspended function call
-* return a value computed by function to the caller side</p>
-<p>A function running by a trampoline needs to be properly adjusted:
-* if a function wants to make a call (might be recursive), it has to return the suspension instruction
-* if a function wants to return a final result, it has to return an instruction describing the result</p>
-<p>The interpretation process looks following:
-* trampoline calls a function
-* function returns the instruction
-* trampoline interprets the instruction, and in case of suspension repeats the process
-* in case of final result trampoline returns the value to its caller</p>
+<p>A trampoline is a some kind of function interpreter. It can do two things:</p>
+<ul>
+<li>resume a suspended function call</li>
+<li>return a value computed by function to the caller side</li>
+</ul>
+<p>A function running by a trampoline needs to be properly adjusted:</p>
+<ul>
+<li>if a function wants to make a call (might be recursive), it has to return the suspension instruction</li>
+<li>if a function wants to return a final result, it has to return an instruction describing the result</li>
+</ul>
+<p>The interpretation process looks following:</p>
+<ul>
+<li>trampoline calls a function</li>
+<li>function returns the instruction</li>
+<li>trampoline interprets the instruction, and in case of suspension repeats the process</li>
+<li>in case of final result trampoline returns the value to its caller</li>
+</ul>
 <p>All function calls are done via the trampoline. When a function has to call another function, instead of calling it directly,
 it provides the address of the function to be called and the arguments to the trampoline. This ensures that the stack
 does not grow and iteration can continue indefinitely.</p>
@@ -112,9 +118,11 @@ does not grow and iteration can continue indefinitely.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">sealed</span> <span class="kw">trait</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="kw">class</span> Return<span class="op">[</span>A<span class="op">](</span>a<span class="op">:</span> A<span class="op">)</span> <span class="kw">extends</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="kw">class</span> Suspend<span class="op">[</span>A<span class="op">](</span>resume<span class="op">:</span> <span class="op">()</span> <span class="op">=&gt;</span> Trampoline<span class="op">[</span>A<span class="op">])</span> <span class="kw">extends</span> Trampoline<span class="op">[</span>A<span class="op">]</span></span></code></pre></div>
-<p><strong>Trampoline</strong> data type has two data constructors
-* <strong>Return</strong> – indicates that the function wants to return a value to the caller side
-* <strong>Suspend</strong> – suspends a function call (trampoline can resume)</p>
+<p><strong>Trampoline</strong> data type has two data constructors</p>
+<ul>
+<li><strong>Return</strong> – indicates that the function wants to return a value to the caller side</li>
+<li><strong>Suspend</strong> – suspends a function call (trampoline can resume)</li>
+</ul>
 <p>Functions <strong>even</strong> and <strong>odd</strong> now can be rewritten respectively</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">object</span> StackSafe <span class="op">{</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> <span class="fu">even</span><span class="op">(</span>n<span class="op">:</span> <span class="ex">Long</span><span class="op">):</span> Trampoline<span class="op">[</span><span class="ex">Boolean</span><span class="op">]</span> <span class="op">=</span></span>
