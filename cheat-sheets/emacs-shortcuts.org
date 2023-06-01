@@ -1,0 +1,75 @@
+---
+title: Emacs cheat sheet
+author: ssledz
+description: Personal emacs cheat sheet
+---
+
+|             <r> |                                   <r> |
+|             Key |                Function / Description |
+|-----------------+---------------------------------------|
+|       ~C-c C-s~ |                ~psc-ide-server-start~ |
+|       ~C-c C-q~ |                 ~psc-ide-server-quit~ |
+|       ~C-c C-t~ |                   ~psc-ide-show-type~ |
+|       ~C-c C-i~ |                  ~psc-ide-add-import~ |
+|       ~C-c C-a~ |                  ~psc-ide-add-clause~ |
+|       ~C-c C-c~ |                  ~psc-ide-case-split~ |
+|       ~C-c C-l~ |                    ~psc-ide-load-all~ |
+|       ~C-c C-b~ |                     ~psc-ide-rebuild~ |
+|     ~C-c C-S-l~ |                 ~psc-ide-load-module~ |
+|       ~C-c M-s~ |  ~psc-ide-flycheck-insert-suggestion~ |
+|-----------------+---------------------------------------|
+|          ~C-up~ |                       ~drag-stuff-up~ |
+|        ~C-down~ |                     ~drag-stuff-down~ |
+|-----------------+---------------------------------------|
+|   ~C-S-c C-S-c~ |                       ~mc/edit-lines~ |
+|       ~C-c m a~ |                    ~mc/mark-all-dwim~ |
+|       ~C-c m n~ |         ~mc/mark-next-like-this-word~ |
+|       ~C-c m p~ |     ~mc/mark-previous-like-this-word~ |
+|       ~C-c m s~ |           ~mc/skip-to-next-like-this~ |
+|-----------------+---------------------------------------|
+|           ~C-=~ |                    ~er/expand-region~ |
+|-----------------+---------------------------------------|
+|       ~c-x n n~ |                    ~narrow to region~ |
+|       ~c-x n w~ |                        ~widen region~ |
+|-----------------+---------------------------------------|
+|          ~<f8>~ |            ~haskell-navigate-imports~ |
+|                 |                                       |
+|         ~<f11>~ |                   ~global-linum-mode~ |
+|       ~C-c C-d~ |                      ~duplicate-line~ |
+|     ~S-<return~ |                      ~jump next line~ |
+|       ~C-c C-u~ |                       ~upcase-region~ |
+|       ~C-c C-l~ |                     ~downcase-region~ |
+|           ~M-;~ | ~comment-or-uncomment-region-or-line~ |
+|         ~C-RET~ |                    ~company-complete~ |
+|        ~[C-f1]~ |                      ~show-file-name~ |
+|                 |                                       |
+|-----------------+---------------------------------------|
+|        ~[(f9)]~ |               ~cycle-buffer-backward~ |
+|       ~[(f10)]~ |                        ~cycle-buffer~ |
+|  ~[(shift f9)]~ |    ~cycle-buffer-backward-permissive~ |
+| ~[(shift f10)]~ |             ~cycle-buffer-permissive~ |
+|                 |                                       |
+|                 |                                       |
+|                 |                                       |
+|-----------------+---------------------------------------|
+|         ~C-x g~ |                               ~magit~ |
+|                 |                                       |
+|         ~M-g g~ |                           ~goto-line~ |
+|         ~M-s o~ |                               ~occur~ |
+|       ~M-g M-n~ |                          ~occur next~ |
+|       ~M-g M-p~ |                          ~occur prev~ |
+|           ~C-o~ |                         ~multi occur~ |
+
+
+Org mode
+
+#+CAPTION: org-mode
+|        <r> |                                 <r> |
+|        Key |                         Description |
+|------------+-------------------------------------|
+|      ~C--~ |              insert horizontal line |
+|  ~C-c C-c~ |                      reformat table |
+| ~S-M-DOWN~ |                insert new row above |
+|      ~TAB~ | go to next cell or insert a new row |
+
+
