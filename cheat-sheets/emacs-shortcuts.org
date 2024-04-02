@@ -48,9 +48,6 @@ description: Personal emacs cheat sheet
 |       ~[(f10)]~ |                        ~cycle-buffer~ |
 |  ~[(shift f9)]~ |    ~cycle-buffer-backward-permissive~ |
 | ~[(shift f10)]~ |             ~cycle-buffer-permissive~ |
-|                 |                                       |
-|                 |                                       |
-|                 |                                       |
 |-----------------+---------------------------------------|
 |         ~C-x g~ |                               ~magit~ |
 |                 |                                       |
